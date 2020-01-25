@@ -1,0 +1,41 @@
+#%RAML 1.0
+title: SalesforceMysql
+baseUri: https://anypoint.mulesoft.com/mocking/api/v1/links/23171495-b6ff-47d3-9bf5-0a8ceb9f23be/ # baseUri:
+description: This API will fetch the information from Salesforce.
+version: v1
+traits:
+  client-id-required:
+    queryParameters:
+      client_id:
+        type: string
+      client_secret:
+        type: string
+uses:
+  Sales:  Resource/SalesforceDatatype.raml
+
+/Employees:
+  get:
+    responses:
+      200:
+        body:
+          application/json:
+            example: !include Examples/SalasforceData.raml
+
+/Employee:
+  /{ID}:
+    get:
+      responses:
+        200:
+          body:
+            application/json:
+              example: !include Examples/SalasforceData.raml
+
+
+              
+/CreateEmployees:
+  post:
+    body:
+      application/json:
+        type: Sales.Order
+        example: !include Examples/SalesforcePost.raml
+                

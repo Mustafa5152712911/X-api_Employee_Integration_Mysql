@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:os="http://www.mulesoft.org/schema/mule/os" xmlns:email="http://www.mulesoft.org/schema/mule/email" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:batch="http://www.mulesoft.org/schema/mule/batch" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd 
+http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/email http://www.mulesoft.org/schema/mule/email/current/mule-email.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd">
+    <http:listener-config name="salesforcemysql-httpListenerConfig">
+        <http:listener-connection host="0.0.0.0" port="8081" />
+    </http:listener-config>
+    <apikit:config name="salesforcemysql-config" api="salesforcemysql.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+	<os:object-store name="Object_store" doc:name="Object store" doc:id="940522da-8be2-450a-9bfa-7343e13360ee" maxEntries="600" entryTtl="60" expirationInterval="1000" expirationIntervalUnit="MILLISECONDS" />
+	<flow name="salesforcemysql-main">
+        <http:listener config-ref="salesforcemysql-httpListenerConfig" path="/api/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body><![CDATA[#[payload]]]></http:body>
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:router config-ref="salesforcemysql-config" />
+		<error-handler>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="a1f70891-46a4-456e-91aa-cf117bb8716c" type="ANY">
+				<ee:transform doc:name="Transform Message" doc:id="bdc7bdc4-47d7-4166-8099-7b7b1eb431ef" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+"API KIT BAD REQUEST IN RAML"]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="salesforcemysql-console">
+        <http:listener config-ref="salesforcemysql-httpListenerConfig" path="/console/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:console config-ref="salesforcemysql-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:NOT_FOUND" enableNotifications="true" logException="true">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="get:\Employees:salesforcemysql-config">
+		<flow-ref doc:name="Fetching_The_Employee_Details" doc:id="c0a1b8fe-d9bf-47c4-bfd9-029cac18e543" name="x-api-GETEmployees_mysql_integration_email_Sub_Flow"/>
+		<set-variable value="#[payload.data]" doc:name="EmployeeDetails" doc:id="8d7f8a8b-fded-4d32-bc41-a9b507b804a3" variableName="OutsideVariable"/>
+		<batch:job jobName="x-api-mysql_integration_email_syncBatch_Job" doc:id="f157c5ec-92d4-49f5-a3c7-9c22bc8ef294" blockSize="10">
+			<batch:process-records >
+				<batch:step name="Batch_Step" doc:id="94797219-e212-4d2b-9464-9746d6fda6ff" >
+					<set-variable value="#[payload.data]" doc:name="Extraction_Of_Array to Object" doc:id="83cbbb42-c5db-444d-a993-ff23945b30c9" variableName="Inflow"/>
+					<logger level="INFO" doc:name="LOG EMPLOYEE DATA" doc:id="0c7fcace-b1f5-4dc4-8401-4b4cd58732e1" message="#[payload.data]"/>
+					<batch:aggregator doc:name="Batch Aggregator" doc:id="b81243d5-a61e-4568-874c-344a35f30adb" size="3">
+						<ee:transform doc:name="MappingData" doc:id="adb27aed-211a-4742-8186-43407c298118" >
+							<ee:message >
+								<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+vars.OutsideVariable map (item,index)->
+{
+	eid: item.id,
+	ename: item.employee_name,
+	salary: item.employee_salary,
+	age: item.employee_age,
+	image: item.profile_image default null
+}]]></ee:set-payload>
+							</ee:message>
+						</ee:transform>
+						<try doc:name="Try" doc:id="2d08ccfd-7a0e-417e-b15f-f09ede1f139e" >
+							<db:bulk-insert doc:name="Insert_To_Database" doc:id="3acea641-9098-4289-8f2f-a671d2254e86" config-ref="Database_Config1">
+							<db:bulk-input-parameters><![CDATA[#[output application/json --- payload]]]></db:bulk-input-parameters>
+							<db:sql>insert into Employee (eid,ename,salary,age,profile_image) values (:eid,:ename,:salary,:age,:image)</db:sql>
+						</db:bulk-insert>
+							<error-handler >
+								<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="403547a3-27c7-477b-9fe0-36cf917b2118" type="ANY">
+									<ee:transform doc:name="HandlingException" doc:id="52df172e-92ff-4d65-945a-4bdda804a129">
+										<ee:message>
+											<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+"Database Configuration Error....."]]></ee:set-payload>
+										</ee:message>
+									</ee:transform>
+								</on-error-propagate>
+							</error-handler>
+						</try>
+						<try doc:name="Try" doc:id="f46b4e28-038e-4224-ada4-d4fbd93511bc" >
+							<os:store doc:name="Store" doc:id="7c36c99f-ac3e-4bac-b7e4-087c00bd3999" key="EmployeeInformation" objectStore="Object_store" />
+							<error-handler >
+								<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="4d333ae8-759b-4f18-80f9-6420bca14bab" type="ANY">
+									<ee:transform doc:name="Transform Message" doc:id="6b889eb4-1ba9-411e-bc80-a12c9f505043" >
+										<ee:message >
+											<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+"Entries Limit Exceeded..."]]></ee:set-payload>
+										</ee:message>
+									</ee:transform>
+								</on-error-propagate>
+							</error-handler>
+						</try>
+						<logger level="INFO" doc:name="Logger" doc:id="66528eea-400d-4d0b-a569-816f26cbc2fd" message="Successfully Stored In the Object Store......."/>
+						<set-payload value="#[payload]" doc:name="Set_Payload_Logger" doc:id="51bdcced-7fc2-4a37-a53c-72fa138de4fa" />
+						<email:send doc:id="39025a61-d4d6-4020-b507-a39b2241ab08" fromAddress="mustafagithub@gmail.com" subject="EmployeeDetails" config-ref="Email_SMTP1" doc:name="Email_Send">
+							<email:to-addresses >
+								<email:to-address value="mustafagithub@gmail.com" />
+							</email:to-addresses>
+						</email:send>
+					</batch:aggregator>
+				</batch:step>
+			</batch:process-records>
+			<batch:on-complete >
+				<logger level="INFO" doc:name="Logger" doc:id="cda9f808-3343-4d54-bdfe-1af0552e3e04" message="#[vars.EmployeeDetails]"/>
+			</batch:on-complete>
+		</batch:job>
+		<set-payload value="Data Inserted Successfully......" doc:name="Printing_Messages" doc:id="4cadc418-ea8d-4414-8eb8-24555498e303" />
+    </flow>
+    <flow name="get:\Employee\(ID):salesforcemysql-config">
+		<flow-ref doc:name="GetEmployees" doc:id="2d0a3164-6eba-4dd5-90b5-540799b1523f" name="X-api-EmployeeById_FlowSub_Flow"/>
+    </flow>
+    <flow name="post:\CreateEmployees:application\json:salesforcemysql-config">
+		<flow-ref doc:name="Insert_Employee_Mysql" doc:id="a0ffd7ca-0e7f-496a-8dda-679515fc6f56" name="X-api-POST_Employee_FlowSub_Floww"/>
+    </flow>
+</mule>

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:validation="http://www.mulesoft.org/schema/mule/validation" xmlns:os="http://www.mulesoft.org/schema/mule/os"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd">
+	<sub-flow name="X-api-EmployeeById_FlowSub_Flow" doc:id="0a7c0ffa-d50a-4878-94b0-6bd3a0c7c45c" >
+		<try doc:name="Try" doc:id="bb465aa9-99f6-46b0-9bb0-b21da82687a4" >
+			<http:request method="GET" doc:name="Request" doc:id="1b00f076-96ed-43f5-b724-12e9eeb9ced1" path="/api/v1/employees" config-ref="HTTP_Request_configuration2">
+			<http:uri-params><![CDATA[#[output application/java
+---
+{
+	"id" : attributes.uriParams.id
+}]]]></http:uri-params>
+		</http:request>
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="ae759e16-17fe-4fa6-a87a-21a242a04b0e" type="ANY">
+					<ee:transform doc:name="Transform Message" doc:id="95caa7de-256f-4b10-9efe-bebd38201ae2" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+{
+}]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<validation:is-true doc:name="Is true" doc:id="fedf16ec-84c6-4987-8042-c9a4a72a0ffc" expression="#[sizeOf(payload)&gt;0]" message="Cannot take the Empty Values"/>
+		<ee:transform doc:name="Transform Message" doc:id="0bdff6a5-3f92-4e17-960a-dd647cda3d16" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+</mule>

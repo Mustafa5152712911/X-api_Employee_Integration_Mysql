@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:email="http://www.mulesoft.org/schema/mule/email" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/email http://www.mulesoft.org/schema/mule/email/current/mule-email.xsd">
+	<http:request-config name="HTTP_Request_configuration2" doc:name="HTTP Request configuration" doc:id="88861030-fbe5-4cf3-9006-cece3f37a948" >
+		<http:request-connection host="dummy.restapiexample.com" />
+	</http:request-config>
+	<db:config name="Database_Config1" doc:name="Database Config" doc:id="2bd9315b-f8fd-48e6-b4b3-e87a74c03100" >
+		<db:my-sql-connection host="localhost" port="3306" user="${mysql.username}" password="${mysql.password}" database="factory" />
+	</db:config>
+	<email:smtp-config name="Email_SMTP1" doc:name="Email SMTP" doc:id="e107148c-29f2-493f-b5db-fe63407412e1" >
+		<email:smtp-connection host="smtp.gmail.com" port="587" user="${Email.username}" password="${Email.password}" >
+			<email:properties >
+				<email:property key="mail.smtp.starttls.enable" value="true" />
+			</email:properties>
+		</email:smtp-connection>
+	</email:smtp-config>
+	<configuration-properties doc:name="Configuration properties" doc:id="309bf769-f0e1-48bb-a218-91c85cfc9b64" file="Credentials.yaml" />
+</mule>

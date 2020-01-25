@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:os="http://www.mulesoft.org/schema/mule/os" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd">
+	<sub-flow name="X-api-POST_Employee_FlowSub_Floww" doc:id="2bb19aa0-9526-4a8e-866f-dca26e124cb6" >
+		<try doc:name="Try" doc:id="b6ba6dc7-ad05-4fb8-817f-a5256a700a5a" >
+			<os:retrieve doc:name="Retrieve" doc:id="215a736a-c281-4c1d-ac16-e82d5500fbf8" key="EmployeeInformation" objectStore="Object_store" />
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="c361dce7-9faf-45c1-8b83-71d14a6debdb" type="ANY">
+					<ee:transform doc:name="Transform Message" doc:id="395a7e1c-f1d7-4a3a-a553-60d311d6ed72" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+"Cannot give the Duplicates Values"]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<try doc:name="Try" doc:id="34d190ae-dfec-4460-a1fb-20395731c6a3" >
+			<db:insert doc:name="Insert" doc:id="8b2f556c-c8ab-4592-a4ee-074abdd7f81d" config-ref="Database_Config1">
+			<db:sql>insert into Employee (eid,ename,salary,age,profile_image) values (:id,:name,:salary,:age,:profile)</db:sql>
+			<db:input-parameters><![CDATA[#[{
+	'id': payload.id as String,
+	'name':payload.employee_name as String,
+	'salary': payload.employee_salary as String,
+	'age': payload.employee_age as String,
+	'profile': payload.profile_image default null
+	
+	
+}]]]></db:input-parameters>
+		</db:insert>
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="98967110-84d1-4c29-bb8e-471f22858667" type="ANY">
+					<ee:transform doc:name="Transform Message" doc:id="acbbc653-3330-42a1-8374-3ee7aaa3c604" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+"Error in Database Configuration..."]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<set-payload value="Data Inserted....." doc:name="Set Payload" doc:id="bf8c6fcc-9ed7-44a5-bfaf-e550d94cc949" />
+	</sub-flow>
+</mule>

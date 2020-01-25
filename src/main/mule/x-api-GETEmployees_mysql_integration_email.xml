@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:batch="http://www.mulesoft.org/schema/mule/batch" xmlns:validation="http://www.mulesoft.org/schema/mule/validation"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd
+http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd">
+	<sub-flow name="x-api-GETEmployees_mysql_integration_email_Sub_Flow" doc:id="5cc350b8-1cf9-40e7-8779-24904a972dc0" >
+		<try doc:name="Try" doc:id="f6d46d0e-ac0e-4938-a66d-dabf8a923452" >
+			<http:request method="GET" doc:name="Request" doc:id="d5ae4e30-fd9d-4295-ab2f-8917270bc25b" path="/api/v1/employees" config-ref="HTTP_Request_configuration2"/>
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="e5199406-072a-4bcc-98b9-3eeccd58e601" type="ANY">
+					<ee:transform doc:name="Transform Message" doc:id="822b1fa3-a912-4da5-adfe-ca4f191b3abd" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+"Unable to Fetch records from the Endpoint"]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<validation:is-true doc:name="Is true" doc:id="f7ffe9f4-7b72-488c-b8e7-1f3576bcf334" expression="#[sizeOf(payload)&gt;0]" message="Cannot Accept the Null Records..."/>
+		<ee:transform doc:name="Transform Message" doc:id="92430b9a-c837-4803-abb7-e7b8d5467744" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="EmployeeDetails" ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+	</sub-flow>
+</mule>

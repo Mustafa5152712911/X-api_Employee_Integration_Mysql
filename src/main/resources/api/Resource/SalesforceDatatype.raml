@@ -1,0 +1,36 @@
+#%RAML 1.0 Library
+types:
+  
+  Order:
+    type: object
+    properties:
+      
+      Order_Number__c:
+        type: string
+        required: false
+      Gender__c:
+        type: string
+        required: false
+        enum:
+          - Male
+          - Female
+      Product__c:
+        type: string
+        required: false
+      Id:
+        type: string
+        required: false
+      Phone_Number__c:
+        type: string
+        required: false
+      Name:
+        type: string
+        required: false
+      Address__c:
+        type: string
+        required: false
+      Email__c:
+        type: string
+        required: false
+      Payment_mode__c?: string
+      Quantity__c?: string
